@@ -1,2 +1,6 @@
 These files is configuration of PXE: 
 default is menu of PXE boot that display in PXE client computer
+dhcp.conf is a configuration file of dhcp server (give address by the client)
+tftp is a configuration file of tftp server (give kernel and initiral RAM disk (temporary filesystem))
+Also you need to install web-serevr, put into it a OS and mention path to OS in PXE boot menu.
+Web-server can be Apache, Nginx, NFS
