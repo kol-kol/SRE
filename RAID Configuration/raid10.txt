@@ -1,0 +1,83 @@
+# RAID 10 on CentOS7
+modprobe linear
+modprobe raid10
+modprobe raid0
+modprobe raid1
+sfdisk -d /dev/sda | sfdisk /dev/sdb --force
+sfdisk -d /dev/sda | sfdisk /dev/sdc --force
+sfdisk -d /dev/sda | sfdisk /dev/sdd --force
+fdisk /dev/sdb
+   t
+   1
+   fd
+   t
+   2
+   fd
+   w
+fdisk /dev/sdc
+   t
+   1
+   fd
+   t
+   2
+   fd
+   w
+fdisk /dev/sdd
+   t
+   1
+   fd
+   t
+   2
+   fd
+   w
+mdadm --create /dev/md0 --level=1 --raid-devices=4 missing /dev/sdb1 /dev/sdc1 /dev/sdd1
+mdadm --create /dev/md1 --level=10 --raid-devices=4 missing /dev/sdb2 /dev/sdc2 /dev/sdd2
+pvcreate /dev/md1
+vgextend centos /dev/md1
+pvmove /dev/sda2 /dev/md1
+vgreduce centos /dev/sda2
+pvremove /dev/sda2
+yum -y install rsync
+mkfs.xfs /dev/md0
+mount /dev/md0 /mnt
+rsync -axu /boot/* /mnt
+umount /mnt
+umount /boot
+mount /dev/md0 /boot
+blkid /dev/md0 >> /etc/fstab 
+vi /etc/fstab 
+(на место, где /boot переносишь UUID /dev/md0) скрин
+mdadm --detail --scan > /etc/mdadm.conf
+mv /boot/initramfs-$(uname -r).img /boot/initramfs-$(uname -r).img.old
+dracut /boot/initramfs-$(uname -r).img $(uname -r)
+vi /etc/default/grub (привести опцию к такому виду)
+GRUB_CMDLINE_LINUX="crashkernel=auto rhgb quiet rd.auto=1"
+fdisk /dev/sda
+   t
+   1
+   fd
+   t
+   2
+   fd
+   w
+partprobe /dev/sda
+umount /boot
+mount /dev/md0 /boot
+mdadm --manage /dev/md0 --add /dev/sda1
+mdadm --manage /dev/md1 --add /dev/sda2
+blockdev --flushbufs /dev/sda1
+blockdev --flushbufs /dev/sda2
+blockdev --flushbufs /dev/sdb1
+blockdev --flushbufs /dev/sdb2
+blockdev --flushbufs /dev/sdc1
+blockdev --flushbufs /dev/sdc2
+blockdev --flushbufs /dev/sdd1
+blockdev --flushbufs /dev/sdd2
+grub2-mkconfig -o /boot/grub2/grub.cfg
+grub2-install --recheck /dev/sda
+grub2-install --recheck /dev/sdb
+grub2-install --recheck /dev/sdc
+grub2-install --recheck /dev/sdd
+grub2-mkconfig -o /boot/grub2/grub.cfg
+mdadm --detail --scan > /etc/mdadm.conf
+
