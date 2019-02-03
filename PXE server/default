@@ -1,0 +1,28 @@
+default vesamenu.c32
+timeout 300
+
+display boot.msg
+
+MENU TITLE PXE Boot Menu
+
+LABEL ^Install CentOS7
+#MENU LABEL CentOS 7 X64
+kernel images/centos7/vmlinuz
+append initrd=images/centos7/initrd.img net.ifnames=0 bond=bond0:eth0,eth1:mode=active-backup,miimon=100 inst.ks=nfs4:192.168.142.10:/srv/nfs/ks-centos7.cfg
+#net.ifnames=0 biosdevname=0
+
+LABEL ^Install CentOS6
+#MENU LABEL CentOS 6 X64
+kernel images/centos6/vmlinuz
+append initrd=images/centos6/initrd.img bond=bond0:eth0,eth1:mode=active-backup,miimon=100 ks=nfs:192.168.142.10:/srv/nfs/ks-centos6.cfg
+
+LABEL ^Install Ubuntu16.04 Server
+kernel images/ubuntu16/linux
+append initrd=images/ubuntu16/initrd.gz url=http://192.168.142.10/preseed-ubuntu1604.seed locale=en_US.UTF-8 console-setup/ask_detect=false keyboard-configuration/layoutcode=us net.ifnames=0 interface=eth0 ipaddress=dhcp hostname=ubuntu live-installer/net-image=http://192.168.142.10/ubuntu/install/filesystem.squashfs
+#netcfg/disable_autoconfig=true interface=eth0 ip=192.168.142.13 netmask=255.255.255.0 gateway=192.168.142.1 nameserver=192.168.142.1 locale=ru_RU.UTF-8
+
+
+LABEL Boot from ^Local Drive
+MENU LABEL Boot from local drive
+localboot 0xffff
+
