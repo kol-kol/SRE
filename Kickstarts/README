@@ -1,0 +1,2 @@
+This is a kickstarts for automatic installation of OS with RAID 1, bond, firewall and access via SSH protocol 2 (key, no password)
+Kickstart for Ubuntu is not full due to mistake of live installer, that is come after configuring RAID and lvm on raid.
