@@ -1,0 +1,84 @@
+# Setting language, country and locale
+#d-i debian-installer/locale string ru_RU.UTF-8
+#d-i localechooser/shortlist select RU
+#d-i console-setup/ask_detect boolean false
+#d-i console-setup/layoutcode string ru
+#d-i console-setup/toggle select Alt+Shift
+# Configuring network
+#d-i netcfg/get_ipaddress string 192.168.142.13
+#d-i netcfg/get_netmask string 255.255.255.0
+#d-i netcfg/get_gateway string 192.168.142.1
+#d-i netcfg/get_nameservers string 192.168.142.1
+#d-i netcfg/get_hostname string ubuntu
+# Setting mirror archive
+d-i mirror/country string manual
+d-i mirror/http/hostname string 192.168.142.10
+d-i mirror/http/directory string /ubuntu
+d-i mirror/http/proxy string
+# Creation root and user accounts
+d-i passwd/root-login boolean true
+d-i passwd/root-password-crypted password [$6$OO0TD..QJ93lPgnN$415FdvwIFqfifkcVo3.V/.K9pUMeBSUlxVSMUt6xYGrIM0zXDjKCRiwvp.GFYSfRQ6f7rNZ3mzBnwRU1mUpjt1]
+d-i passwd/user-fullname string ubuntu user
+d-i passwd/username string kol
+d-i passwd/user-password-crypted password [$6$A6GfGOiqb1PZfPjF$hbZb3/Avqk6osxD4Ql6yKvqZ6krU5q3zk4PRijlP2Rt4udxBQ5TbPVVVoPs2YIzCqLz6MIAAzYbM4cwM45g1R.]
+# Don't encrypt home directory
+d-i user-setup/encrypt-home boolean false
+# Set up time zone and clock
+d-i time/zone string US/Eastern
+#d-i time/zone string Europe/Moscow
+# Partitioning. RAID1 with LVM, 2 disks, raid-0 for /boot, raid-1 for /root
+#d-i partman/early_command string \
+#d-i partman-auto/init_automatically_partition select custom
+#	d-i partman-lvm/device_remove_lvm boolean true
+#	d-i partman-md/device_remove_md boolean true
+#d-i partman/early_command string debconf-set partman-auto/disk "$(list-devices disk | head -n1)"
+d-i partman-auto/method string raid
+d-i partman-auto/disk string /dev/sda /dev/sdb
+d-i partman-lvm/device_remove_lvm boolean true
+d-i partman-md/device_remove_md boolean true
+d-i partman-lvm/confirm boolean true
+#d-i partman-auto-lvm/new_vg_name string ubuntu
+d-i partman-auto-lvm/guided_size string max
+#d-i partman-auto/choose_recipe select multiraid
+d-i partman-auto/expert_recipe string \
+	multiraid :: \
+		1024 1024 1024 raid \
+			$lvmignore{ } \
+			method{ raid } \
+		. \
+		4000 4001 -1 raid \
+			$lvmignore{ } \
+			method{ raid } \
+		. \
+		500 500 500 swap \
+			$defaultignore{ } \
+			$lvmok{ } \
+#			in_vg{ ubuntu } \
+			lv_name{ swap } \
+			method{ swap } \
+			format{ } \
+		. \
+		3500 3500 -1 ext4 \
+			$defaultignore{ } \
+			$lvmok{ } \
+#			in_vg{ ubuntu } \
+			lv_name{ root } \
+			method{ format } \
+			format{ } \
+			use_filesystem{ } \
+			filesystem{ ext4 } \
+			mountpoint{ / } \
+		.
+d-i partman-auto-raid/recipe string \
+	1 2 0 ext4 /boot /dev/sda1#/dev/sdb1 . \
+	1 2 0 lvm - /dev/sda5#/dev/sdb5 .
+#d-i mdadm/boot_degraded boolean false
+d-i partman-md/confirm_nooverwrite boolean true
+d-i partman-md/confirm boolean true
+d-i partman/confirm_write_new_label boolean true
+d-i partman/choose_partition select finish
+d-i partman/confirm boolean true
+d-i partman/confirm_nooverwrite boolean true
+#d-i partman/mount_style select uuid
+# Base system installation
+d-i live-installer/net-image string http://192.168.142.10/ubuntu/install/filesystem.squashfs
