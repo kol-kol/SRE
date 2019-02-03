@@ -1,0 +1,5 @@
+The bird's configuration file can be common independendly of IP.
+As for dummy, this is config of fake interface, needed for announce working.
+It is required to create dummy for each server, due to different IP addresses.
+You would need this configuration file and enter a command modprobe dummy. 
+And it is existing a possibility to make this dummy constant after rebooting.
