@@ -1,0 +1,31 @@
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+source /etc/network/interfaces.d/*
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+#ens9 configuration
+auto ens9
+iface ens9 inet manual
+bond-master bond0
+
+#ens10 configuration
+auto ens10
+iface ens10 inet manual
+bond-master bond0
+
+#Main configuration of bond0
+auto bond0
+iface bond0 inet static
+  address 192.168.142.113
+  netmask 255.255.255.0
+  gateway 192.168.142.1
+  dns-nameservers 192.168.142.1
+
+#Additional options of bond0
+bond-mode 1
+bond-miimon 100
+slaves ens9 ens10
