@@ -46,11 +46,11 @@ umount /boot
 mount /dev/md0 /boot
 blkid /dev/md0 >> /etc/fstab 
 vi /etc/fstab 
-(на место, где /boot переносишь UUID /dev/md0) скрин
+(You can see new UUID, put it instead of existing in string beginning with /boot) 
 mdadm --detail --scan > /etc/mdadm.conf
 mv /boot/initramfs-$(uname -r).img /boot/initramfs-$(uname -r).img.old
 dracut /boot/initramfs-$(uname -r).img $(uname -r)
-vi /etc/default/grub (привести опцию к такому виду)
+vi /etc/default/grub (Next string you need to put instead of existing string)
 GRUB_CMDLINE_LINUX="crashkernel=auto rhgb quiet rd.auto=1"
 fdisk /dev/sda
    t
