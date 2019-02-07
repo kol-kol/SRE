@@ -1,3 +1,3 @@
 # SRE
 
-What I did during Search Reliability Engineer quest
+What I did during Site Reliability Engineer quest
