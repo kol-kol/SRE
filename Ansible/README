@@ -1,2 +1,4 @@
 This is playbook that install Apache web-server on CentOS 6 and CentOS 7, check it and firewall rules that needed for working Apache.
-Script Modify_iptables is adding essential rules for Apache
+Script Modify_iptables is adding essential rules for Apache. File hosts is inventory in Ansible. In the field of password place your root password.
+However this is insecure way to use playbook. It was chosen just for correct testing of playbook job, of course you need to set SSH key access and then figure out how to
+launch commands on sudo. Instruments that were suggested in Ansible documentation does not working...
