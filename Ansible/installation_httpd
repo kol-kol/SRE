@@ -1,0 +1,59 @@
+---
+- hosts: webservers
+  tasks:
+    - name: Сheck if Apache has already been installed or install it
+      yum:
+        name: httpd
+        state: installed
+        update_cache: yes
+      register: result
+
+    - name: Launching Apache on booting in CentOS 6 
+      shell: chkconfig httpd on
+      when: ansible_facts['distribution'] == "CentOS" and ansible_facts['distribution_major_version'] == "6"
+
+    - name: Launching Apache on booting in CentOS 7  
+      command: systemctl enable httpd
+      when: ansible_facts['distribution'] == "CentOS" and ansible_facts['distribution_major_version'] == "7"
+
+    - name: Change httpd.service file on file with correct settings
+      copy:
+        src: /home/kol/playbooks/CentOS7Files/httpd.service
+        dest: /usr/lib/systemd/system/httpd.service
+        owner: admin
+        mode: 0666
+      when: ansible_facts['distribution'] == "CentOS" and ansible_facts['distribution_major_version'] == "7" and result is changed
+
+    - name: Restart daemon systemctl
+      shell: systemctl daemon-reload
+      when: ansible_facts['distribution'] == "CentOS" and ansible_facts['distribution_major_version'] == "7" and result is changed
+
+    - name: Check firewalld on CentOS 7
+      firewalld:
+        service: http
+        permanent: yes
+        zone: public
+        immediate: yes
+        state: enabled
+      when: ansible_facts['distribution'] == "CentOS" and ansible_facts['distribution_major_version'] == "7"
+
+    - name: Install libselinux-python on CentOS 6
+      yum:
+        name: libselinux-python
+        state: installed
+      when: ansible_facts['distribution'] == "CentOS" and ansible_facts['distribution_major_version'] == "6"
+
+    - name: Copy script to check iptables on CentOS 6
+      copy:
+        src: /home/kol/playbooks/Modify_iptables
+        dest: /Modify_iptables
+        owner: admin
+        mode: 0666
+      when: ansible_facts['distribution'] == "CentOS" and ansible_facts['distribution_major_version'] == "6"
+  
+    - name: Check iptables rules on CentOS 6  
+      raw: ./Modify_iptables
+      when: ansible_facts['distribution'] == "CentOS" and ansible_facts['distribution_major_version'] == "6"
+
+    - name: Start Apache
+      service: name=httpd state=started
