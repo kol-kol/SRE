@@ -1,0 +1,20 @@
+#!/bin/bash
+indicator=0
+inputrule=`cat /etc/sysconfig/iptables | grep -e "-A INPUT -p tcp -m tcp --dport 80 -j ACCEPT"`
+outputrule=`cat /etc/sysconfig/iptables | grep -e "-A OUTPUT -p tcp -m tcp --sport 80 -j ACCEPT"`
+if [ -z "$inputrule" ]; then
+    sed -i "s/.*COMMIT.*//" /etc/sysconfig/iptables;
+    echo "-A INPUT -p tcp -m tcp --dport 80 -j ACCEPT" >> /etc/sysconfig/iptables;
+    indicator=1;
+fi
+if [ -z "$outputrule" ]; then
+    sed -i "s/.*COMMIT.*//" /etc/sysconfig/iptables;
+    echo "-A OUTPUT -p tcp -m tcp --sport 80 -j ACCEPT" >> /etc/sysconfig/iptables;
+    indicator=2;
+fi
+if [ $indicator -gt 0 ]; then
+    echo "COMMIT" >> /etc/sysconfig/iptables;
+fi
+/etc/init.d/iptables reload
+/etc/init.d/iptables save
+/etc/init.d/iptables restart
