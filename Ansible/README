@@ -1,1 +1,2 @@
-This is playbook that install Apache web-server on CentOS 6 and CentOS 7, check it and firewall rules that needed for working Apache
+This is playbook that install Apache web-server on CentOS 6 and CentOS 7, check it and firewall rules that needed for working Apache.
+Script Modify_iptables is adding essential rules for Apache
