@@ -1,0 +1,120 @@
+#cloud-config
+# The upper-line comment is mandatory and it must be written exactly as it is done in the current config in order for cloud-init to work
+
+hostname: TerraformVM-cloudinit
+keyboard:
+  layout: us
+locale: en_US.UTF-8
+timezone: Europe/Moscow
+groups:
+  - wheel
+  - proc
+  - systemd-journal
+
+# Add users to the system. Users are added after groups are added
+users:
+  - name: ansible
+    gecos: Ansible user for configuring VM via ansible roles, playbooks
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: [wheel, proc, systemd-journal]
+    system: false
+    lock_passwd: true
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQChdbxLY/75iQriURhnMEe0wl6U40GEbfvFNXFI2p9HxpXZIsYwE0Rb2oa+3eJmVF0Pm3moJ93bbyXjwkHNl2ivQcDPZJZCQceUJOPoClGTZDhFMO/Osx8hHXfrt7RA1jCSkgLL7g6gQ2HJ7uE17dJMAsRSuYng8Heoy7g6wMCPT6IlvlWeNgsXG3gaALzav55HCLcz68l27c2xwdoRyC7ZXbR7Lwl5nWvl4NR3Fr36u/vSJeuOdA55YNA6vJJfpz361cRDqB/1yjFMY0XzGEsangcVORZKrToF2BKMqB5HJmkqjRqpWVg9gCHXr2Ra7UPu7trelfigUHl57sPGedP9 admin@gitlab-runner
+  - name: cloudadmin
+    gecos: Cloud Administrator account
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: false
+    plain_text_passwd: ($password)
+    groups: [wheel, proc, systemd-journal]
+
+# Prepare DNS and resolv.conf settings
+bootcmd:
+  - sed -i 's/#DNS=/DNS=($ip)/' /etc/systemd/resolved.conf
+  - sed -i 's/#Domains=*/Domains=($fqdn_of_domain)/' /etc/systemd/resolved.conf
+  - sed -i 's/#Cache=yes/Cache=yes/g' /etc/systemd/resolved.conf
+  - sed -i 's/#LLMNR=yes/LLMNR=yes/g' /etc/systemd/resolved.conf
+  - sed -i 's/#ResolveUnicastSingleLabel=no/ResolveUnicastSingleLabel=yes/g' /etc/systemd/resolved.conf
+  - rm /etc/resolv.conf
+  - ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+  - systemctl restart systemd-networkd systemd-resolved
+
+# Add files related to repositories, chronyd, IPv6 kernel and systemd-networkd settings
+write_files:
+- path: /etc/apt/sources.list.d/alt.list
+  permissions: 0644
+  owner: root:root
+  encoding: text/plain
+  content: |
+    rpm [p10] ftp://($hostname)/p10/branch/ x86_64 classic
+    rpm [p10] ftp://($hostname)/p10/branch/ x86_64-i586 classic
+    rpm [p10] ftp://($hostname)/p10/branch/ noarch classic
+- path: /etc/sysctl.conf
+  permissions: 0644
+  owner: root:root
+  encoding: text/plain
+  content: |
+    net.ipv6.conf.all.disable_ipv6 = 1
+    net.ipv6.conf.default.disable_ipv6 = 1
+    net.ipv6.conf.lo.disable_ipv6 = 1
+- path: /etc/systemd/networkd.conf.d/ipv6-privacy-extensions.conf
+  encoding: text/plain
+  permissions: 0644
+  owner: root:root
+  content: |
+    [Network]
+    IPv6PrivacyExtensions=kernel
+- path: /etc/chrony.conf
+  permissions: 0644
+  owner: root:root
+  encoding: text/plain
+  content: |
+    # Use private timezone server
+    pool ($hostname or ip) iburst prefer
+    # Record the rate at which the system clock gains/losses time.
+    driftfile /var/lib/chrony/drift
+    # Allow the system clock to be stepped in the first three updates
+    # if its offset is larger than 1 second.
+    makestep 1.0 3
+    # Enable kernel synchronization of the real-time clock (RTC).
+    rtcsync
+    # Enable hardware timestamping on all interfaces that support it.
+    #hwtimestamp *
+    # Increase the minimum number of selectable sources required to adjust
+    # the system clock.
+    #minsources 2
+    # Allow NTP client access from local network.
+    #allow 192.168.0.0/16
+    # Serve time even if not synchronized to a time source.
+    #local stratum 10
+    # Require authentication (nts or key option) for all NTP sources.
+    #authselectmode require
+    # Specify file containing keys for NTP authentication.
+    #keyfile /etc/chrony.keys
+    # Save NTS keys and cookies.
+    ntsdumpdir /var/lib/chrony
+    # Insert/delete leap seconds by slewing instead of stepping.
+    #leapsecmode slew
+    # Get TAI-UTC offset and leap seconds from the system tz database.
+    leapsectz right/UTC
+    # Specify directory for log files.
+    logdir /var/log/chrony
+    # Select which information is logged.
+    #log measurements statistics tracking
+
+# Install additional and upgrade current packages
+packages:
+  - chrony
+  - tzdata
+  - python3
+package_update: true
+package_upgrade: true
+
+# Start chronyd (time synchronization), updating kernel and grub, rebooting system
+runcmd:
+  - systemctl restart chronyd
+  - update-kernel -y
+  - grub-install /dev/sda
+  - shutdown -r now
